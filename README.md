@@ -1,1 +1,169 @@
-# Pedash_Sergey_Aleksandrovich_9
+# Запуск Java Spring Boot приложений в промышленной среде: настройка systemd и проксирование
+
+## Цель
+
+Закрепить и расширить знания по запуску Java Spring Boot приложений путём самостоятельной подготовки реферата, оформления его в разных форматах и размещения в среде совместной разработки GitHub, а также освоить навыки рецензирования работ других студентов.
+
+## Задание
+
+- Изучить выбранную тему реферата в соответствии с пройденными лабораторными работами.
+- Подготовить реферат в формате MS Word в соответствии с требованиями дисциплины.
+- Выполнить оформление реферата в формате readme.md с использованием markdown или HTML, обеспечив максимально близкую структуру к Word-версии (кроме титульного листа).
+- Разместить оба варианта реферата в репозитории GitHub.
+- Направить реферат преподавателю по электронной почте, указав в теле письма и в конце Word-файла прямую ссылку на размещённый материал на GitHub.
+- Провести ревью рефератов всех студентов группы: оценить, оставить комментарии и замечания (в вкладке issues для каждого).
+
+## Содержание
+
+[Введение](#введение)
+
+[Архитектура Spring Boot приложений и потребности промышленной эксплуатации](#архитектура-spring-boot-приложений-и-потребности-промышленной-эксплуатации)
+
+[Настройка systemd для управления Spring Boot приложением](#настройка-systemd-для-управления-spring-boot-приложением)
+
+[Проксирование запросов с помощью Nginx](#проксирование-запросов-с-помощью-nginx)
+
+[Интеграция systemd и Nginx в единую систему](#интеграция-systemd-и-nginx-в-единую-систему)
+
+[Заключение](#заключение)
+
+[Список литературы](#список-литературы)
+
+## Введение
+
+Java Spring Boot — один из самых популярных фреймворков для создания современных enterprise-приложений. Благодаря встроенным серверам (таким как Tomcat, Netty) и концепции "из коробки", он позволяет быстро разрабатывать и разворачивать микросервисы и монолитные приложения. Однако запуск `java -jar` вручную не подходит для промышленной среды, где критически важны отказоустойчивость, автоматический перезапуск, управление ресурсами и безопасность.
+
+Для промышленной эксплуатации необходимы инструменты, обеспечивающие контроль над жизненным циклом приложения и эффективное распределение входящего трафика. В данном реферате рассматриваются два ключевых компонента для решения этих задач: **systemd** (как система инициализации и менеджер служб в Linux) и **Nginx** (как высокопроизводительный обратный прокси-сервер).
+
+## Архитектура Spring Boot приложений и потребности промышленной эксплуатации
+
+Spring Boot приложения по умолчанию собираются в единый исполняемый JAR-файл, который содержит встроенный веб-сервер. Это упрощает разработку, но создаёт особенности при развёртывании:
+
+- Приложение должно быть запущено от непривилегированного пользователя в целях безопасности.
+- Необходимо обеспечить автоматический запуск при загрузке операционной системы.
+- Требуется механизм для автоматического перезапуска приложения в случае его падения.
+- Важно контролировать потребление ресурсов (память, CPU).
+- Приложение должно быть доступно по стандартным HTTP/HTTPS портам (80/443), которые требуют прав root для прямого захвата.
+
+Решение этих задач невозможно без использования специализированных систем управления службами и прокси-серверов.
+
+## Настройка systemd для управления Spring Boot приложением
+
+**Systemd** — это современная система инициализации и менеджер служб для большинства дистрибутивов Linux. Она позволяет управлять приложением как службой.
+
+**Основные преимущества использования systemd:**
+- Автоматический запуск и остановка при загрузке/выключении системы.
+- Автоматический перезапуск при сбоях (restart policies).
+- Централизованное управление логами через `journalctl`.
+- Контроль над ресурсами (лимиты памяти, CPU).
+- Простое управление службой командами `systemctl start/stop/restart/status`.
+
+**Пример unit-файла для Spring Boot приложения: `/etc/systemd/system/myapp.service`**
+
+```ini
+[Unit]
+Description=My Spring Boot Application
+After=network.target
+
+[Service]
+Type=simple
+User=appuser
+Group=appgroup
+ExecStart=/usr/bin/java -jar /opt/myapp/myapp.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=30
+Environment="SPRING_PROFILES_ACTIVE=prod"
+Environment="JAVA_OPTS=-Xmx512m -Xms256m"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+## Проксирование запросов с помощью Nginx
+
+Встроенный сервер Spring Boot (например, Tomcat) по умолчанию работает на порту 8080. Прямое обращение к нему извне небезопасно и неэффективно. **Nginx** выступает в роли обратного прокси, решающего следующие задачи:
+
+- Приём входящих HTTP/HTTPS запросов на стандартных портах.
+- Терминация SSL/TLS шифрования.
+- Балансировка нагрузки между несколькими экземплярами приложения.
+- Кеширование статического контента.
+- Компрессия ответов (gzip).
+- Защита от некоторых типов DDoS-атак.
+
+**Пример конфигурации Nginx для проксирования: `/etc/nginx/sites-available/myapp`**
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com www.your-domain.com;
+
+    # Перенаправление всего HTTP-трафика на HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com www.your-domain.com;
+
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Кеширование статических ресурсов
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        proxy_pass http://127.0.0.1:8080;
+    }
+}
+```
+
+## Интеграция systemd и Nginx в единую систему
+
+Совместное использование systemd и Nginx создаёт надежную и производительную систему для промышленной эксплуатации Spring Boot приложений.
+
+**Поток запроса:**
+
+1. Пользователь обращается к доменному имени по порту 80/443.
+2. Nginx, работающий с правами root, принимает запрос.
+3. Nginx перенаправляет (проксирует) запрос на Spring Boot приложение, работающее на localhost:8080.
+4. Spring Boot приложение, управляемое systemd, обрабатывает запрос и возвращает ответ через Nginx обратно пользователю.
+
+**Преимущества связки:**
+
+- **Безопасность:** Приложение работает из-под непривилегированного пользователя, не имеет доступа к стандартным портам.
+- **Надёжность:** Systemd гарантирует, что приложение всегда запущено.
+- **Производительность:** Nginx эффективно обслуживает статику и разгружает приложение.
+- **Гибкость:** Легко добавить новые экземпляры приложения для балансировки нагрузки или выполнить "бесшовный" деплой (zero-downtime deployment) путем поочерёдного перезапуска служб через systemd.
+
+## Заключение
+
+Промышленная эксплуатация Java Spring Boot приложений требует выхода за рамки простого запуска JAR-файла. Использование связки **systemd** и **Nginx** предоставляет полный контроль над жизненным циклом приложения и входящим сетевым трафиком.
+
+- **Systemd** обеспечивает отказоустойчивость, автоматизацию запуска и удобное управление приложением как службой.
+- **Nginx** выступает в роли безопасного и высокопроизводительного шлюза, handling SSL, сжатие, кеширование и проксирование запросов к приложению.
+
+Вместе они образуют надежную, масштабируемую и легко управляемую платформу для развертывания современных Java-приложений в продакшн-среде, соответствующую лучшим практикам DevOps.
+
+## Список литературы
+
+- Документация Spring Boot // VMware, Inc. // URL: <https://spring.io/projects/spring-boot>.
+- Systemd. Руководство системного администратора // Red Hat. // URL: <https://access.redhat.com/documentation/ru-ru/red_hat_enterprise_linux/8/html/managing_services_with_systemd/index>.
+- Документация Nginx // F5 NGINX, Inc. // URL: <https://nginx.org/ru/docs/>.
+- Deploying Spring Boot Applications // Spring Boot Official Documentation. // URL: <https://docs.spring.io/spring-boot/docs/current/reference/html/deployment.html>.
+- Using Nginx as a Reverse Proxy // Nginx Blog. // URL: <https://www.nginx.com/blog/nginx-reverse-proxy/>.
+- Spring Boot Reference Documentation // Pivotal Software. // URL: <https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/>.
+- Linux Systemd Service File Examples // DigitalOcean Community. // URL: <https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files>.
+- Nginx Load Balancing // Nginx.com. // URL: <https://www.nginx.com/resources/glossary/load-balancing/>.
+- Spring Boot Production Ready Features // Spring.io. // URL: <https://spring.io/blog/2020/08/14/spring-boot-2-3-0-available-now>.
+- Securing Spring Boot Applications // Baeldung. // URL: <https://www.baeldung.com/spring-boot-security-autoconfiguration>.
+- High Availability with Nginx // Nginx.com. // URL: <https://www.nginx.com/blog/high-availability-nginx-load-balancer/>.
+- Java Memory Management for Spring Boot // Baeldung. // URL: <https://www.baeldung.com/java-memory-management-spring-boot>.
