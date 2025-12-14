@@ -155,15 +155,13 @@ server {
 
 ## Список литературы
 
-- Документация Spring Boot // VMware, Inc. // URL: <https://spring.io/projects/spring-boot>.
-- Systemd. Руководство системного администратора // Red Hat. // URL: <https://habr.com/ru/articles/942760/>.
-- Документация Nginx // F5 NGINX, Inc. // URL: <https://nginx.org/ru/docs/>.
-- Deploying Spring Boot Applications // Spring Boot Official Documentation. // URL: <https://docs.spring.io/spring-boot/docs/current/reference/html/deployment.html>.
-- Using Nginx as a Reverse Proxy // Nginx Blog. // URL: <https://timothy-quinn.com/using-nginx-as-a-reverse-proxy-for-multiple-sites/>.
-- Spring Boot Reference Documentation // Pivotal Software. // URL: <https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/>.
-- Linux Systemd Service File Examples // DigitalOcean Community. // URL: <https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files>.
-- Nginx Load Balancing // Nginx.com. // URL: <https://www.nginx.com/resources/glossary/load-balancing/>.
-- Spring Boot Production Ready Features // Spring.io. // URL: <https://docs.spring.io/spring-boot/docs/2.2.x/reference/html/production-ready-features.html>.
-- Securing Spring Boot Applications // Baeldung. // URL: <https://www.baeldung.com/spring-boot-security-autoconfiguration>.
-- High Availability with Nginx // Nginx.com. // URL: <https://docs.nginx.com/nginx/admin-guide/high-availability/configuration-sharing/>.
-- Java Memory Management for Spring Boot // Baeldung. // URL: <https://spring.io/blog/2015/12/10/spring-boot-memory-performance>.
+1.  **Документация Spring Boot** // VMware, Inc. // URL: https://spring.io/projects/spring-boot (дата обращения: 23.11.2025).
+2.  **Systemd. Руководство системного администратора** // Red Hat. // URL: https://habr.com/ru/articles/942760/ (дата обращения: 22.11.2025).
+3.  **Документация Nginx** // F5 NGINX, Inc. // URL: https://nginx.org/ru/docs/ (дата обращения: 22.11.2025).
+4.  **Deploying Spring Boot Applications** // Spring Boot Official Documentation. // URL: https://docs.spring.io/spring-boot/docs/current/reference/html/deployment.html (дата обращения: 23.11.2025).
+5.  **Using Nginx as a Reverse Proxy** // Nginx Blog. // URL: https://timothy-quinn.com/using-nginx-as-a-reverse-proxy-for-multiple-sites/ (дата обращения: 21.11.2025).
+6.  **Spring Boot Reference Documentation** // Pivotal Software. // URL: https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/ (дата обращения: 22.11.2025).
+7.  **Linux Systemd Service File Examples** // DigitalOcean Community. // URL: https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files (дата обращения: 22.11.2025).
+8.  **Nginx Load Balancing** // Nginx.com. // URL: https://www.nginx.com/resources/glossary/load-balancing/ (дата обращения: 23.11.2025).
+9.  **Spring Boot Production Ready Features** // Spring.io. // URL: https://docs.spring.io/spring-boot/docs/2.2.x/reference/html/production-ready-features.html (дата обращения: 22.11.2025).
+10. **Securing Spring Boot Applications** // Baeldung. // URL: https://www.baeldung.com/spring-boot-security-autoconfiguration (дата обращения: 23.11.2025).
